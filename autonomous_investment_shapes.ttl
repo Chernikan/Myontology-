@@ -1,0 +1,386 @@
+@prefix ais: <https://example.org/autonomous-investment#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<https://example.org/autonomous-investment/shapes#AnalysisResultShape> a sh:NodeShape ;
+    rdfs:label "Форма аналитической гипотезы"@ru ;
+    rdfs:comment "Аналитический результат должен быть помечен как гипотеза, а не как допущенное решение."@ru ;
+    sh:property [ sh:in ( "hypothesis"^^xsd:string "projectAssumption"^^xsd:string "fact"^^xsd:string "normative"^^xsd:string ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:knowledgeStatus ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:analysisGeneratedBy ],
+        [ sh:class ais:MarketData ;
+            sh:minCount 1 ;
+            sh:path ais:analysisBasedOnData ],
+        [ sh:datatype xsd:boolean ;
+            sh:maxCount 1 ;
+            sh:path ais:illustrativeExample ] ;
+    sh:targetClass ais:AnalysisResult .
+
+<https://example.org/autonomous-investment/shapes#BrokerAPIShape> a sh:NodeShape ;
+    rdfs:label "Форма брокерского API"@ru ;
+    sh:property [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:apiProviderName ],
+        [ sh:in ( "available"^^xsd:string "unavailable"^^xsd:string "unknown"^^xsd:string ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:apiAccessStatus ] ;
+    sh:targetClass ais:BrokerAPI .
+
+<https://example.org/autonomous-investment/shapes#DecisionShape> a sh:NodeShape ;
+    rdfs:label "Форма решения"@ru ;
+    rdfs:comment "Решение не тождественно аналитической гипотезе; наличие проверки риска обязательно."@ru ;
+    sh:property [ sh:in ( "buy"^^xsd:string "sell"^^xsd:string "hold"^^xsd:string ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:decisionType ],
+        [ sh:in ( "formed"^^xsd:string "admitted"^^xsd:string "blocked"^^xsd:string "notAdmitted"^^xsd:string ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:decisionStatus ],
+        [ sh:class ais:RiskCheck ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:decisionHasRiskCheck ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:decisionCurrency ],
+        [ sh:class ais:AnalysisResult ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:decisionBasedOnAnalysis ],
+        [ sh:class ais:JournalEntry ;
+            sh:message "У каждого события должна быть запись журнала (А12)."@ru ;
+            sh:minCount 1 ;
+            sh:path ais:hasJournalEntry ],
+        [ sh:class ais:TradeOperation ;
+            sh:maxCount 1 ;
+            sh:message "Одно решение может породить не более одной операции (А6)."@ru ;
+            sh:path ais:decisionCreatesOperation ],
+        [ sh:class ais:Instrument ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:decisionForInstrument ],
+        [ sh:datatype xsd:time ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:decisionTime ],
+        [ sh:datatype xsd:decimal ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:minInclusive 0.0 ;
+            sh:path ais:decisionAmount ] ;
+    sh:targetClass ais:Decision .
+
+<https://example.org/autonomous-investment/shapes#ExecutionShape> a sh:NodeShape ;
+    rdfs:label "Форма подтверждённого исполнения"@ru ;
+    rdfs:comment "Экземпляр Execution создаётся только после независимого подтверждения брокера (А7)."@ru ;
+    sh:property [ sh:class ais:Position ;
+            sh:minCount 1 ;
+            sh:path ais:executionChangesPosition ],
+        [ sh:datatype xsd:boolean ;
+            sh:hasValue true ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:independentConfirmation ],
+        [ sh:datatype xsd:decimal ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:minInclusive 0.0 ;
+            sh:path ais:executionPrice ],
+        [ sh:class ais:JournalEntry ;
+            sh:message "У каждого события должна быть запись журнала (А12)."@ru ;
+            sh:minCount 1 ;
+            sh:path ais:hasJournalEntry ],
+        [ sh:datatype xsd:decimal ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:minInclusive 0.0 ;
+            sh:path ais:executionQuantity ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:brokerConfirmationId ],
+        [ sh:datatype xsd:dateTime ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:executionTime ],
+        [ sh:class ais:TradeOperation ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:executionOfOperation ] ;
+    sh:targetClass ais:Execution .
+
+<https://example.org/autonomous-investment/shapes#FinancialResultShape> a sh:NodeShape ;
+    rdfs:label "Форма финансового результата"@ru ;
+    rdfs:comment "Финансовый результат должен ссылаться на подтверждённые исполнения (А10)."@ru ;
+    sh:property [ sh:in ( "realized"^^xsd:string "unrealized"^^xsd:string ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:realizationStatus ],
+        [ sh:class ais:Execution ;
+            sh:minCount 1 ;
+            sh:path ais:financialResultBasedOnExecution ],
+        [ sh:in ( "fact"^^xsd:string "hypothesis"^^xsd:string ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:resultKnowledgeStatus ],
+        [ sh:datatype xsd:decimal ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:netResultAmount ],
+        [ sh:datatype xsd:decimal ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:minInclusive 0.0 ;
+            sh:path ais:commissionAmount ],
+        [ sh:datatype xsd:decimal ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:minInclusive 0.0 ;
+            sh:path ais:grossIncome ],
+        [ sh:datatype xsd:decimal ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:minInclusive 0.0 ;
+            sh:path ais:lossAmount ],
+        [ sh:datatype xsd:decimal ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:minInclusive 0.0 ;
+            sh:path ais:taxAmount ] ;
+    sh:targetClass ais:FinancialResult .
+
+<https://example.org/autonomous-investment/shapes#InstrumentShape> a sh:NodeShape ;
+    rdfs:label "Форма инструмента"@ru ;
+    sh:property [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:ticker ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:instrumentType ] ;
+    sh:targetClass ais:Instrument .
+
+<https://example.org/autonomous-investment/shapes#JournalEntryShape> a sh:NodeShape ;
+    rdfs:label "Форма записи журнала"@ru ;
+    sh:property [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:journalContent ],
+        [ sh:in ( "decision"^^xsd:string "risk_check"^^xsd:string "operation"^^xsd:string "execution"^^xsd:string "notification"^^xsd:string ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:journalEventType ],
+        [ sh:datatype xsd:time ;
+            sh:maxCount 1 ;
+            sh:path ais:journalTime ],
+        [ sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path ais:journalEntryFor ] ;
+    sh:targetClass ais:JournalEntry .
+
+<https://example.org/autonomous-investment/shapes#MarketDataShape> a sh:NodeShape ;
+    rdfs:label "Форма рыночных данных"@ru ;
+    sh:property [ sh:datatype xsd:time ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:marketDataReceivedAt ],
+        [ sh:class ais:Instrument ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:marketDataForInstrument ] ;
+    sh:targetClass ais:MarketData .
+
+<https://example.org/autonomous-investment/shapes#NotificationShape> a sh:NodeShape ;
+    rdfs:label "Форма уведомления"@ru ;
+    sh:property [ sh:class ais:Decision ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:notificationAboutDecision ],
+        [ sh:class ais:Owner ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:notificationToOwner ],
+        [ sh:class ais:BrokerAPI ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:notificationCausedByAPI ],
+        [ sh:class ais:JournalEntry ;
+            sh:message "У каждого события должна быть запись журнала (А12)."@ru ;
+            sh:minCount 1 ;
+            sh:path ais:hasJournalEntry ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:notificationReason ] ;
+    sh:targetClass ais:Notification .
+
+<https://example.org/autonomous-investment/shapes#OwnerShape> a sh:NodeShape ;
+    rdfs:label "Форма владельца"@ru ;
+    sh:property [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:ownerName ] ;
+    sh:targetClass ais:Owner .
+
+<https://example.org/autonomous-investment/shapes#PortfolioShape> a sh:NodeShape ;
+    rdfs:label "Форма портфеля"@ru ;
+    sh:property [ sh:datatype xsd:decimal ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:minInclusive 0.0 ;
+            sh:path ais:portfolioCapital ],
+        [ sh:datatype xsd:decimal ;
+            sh:maxCount 1 ;
+            sh:maxInclusive 100.0 ;
+            sh:minCount 1 ;
+            sh:minInclusive 0.0 ;
+            sh:path ais:portfolioDailyLossPct ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:portfolioCurrency ] ;
+    sh:targetClass ais:Portfolio .
+
+<https://example.org/autonomous-investment/shapes#PositionShape> a sh:NodeShape ;
+    rdfs:label "Форма позиции"@ru ;
+    rdfs:comment "Позиция должна быть связана с инструментом и подтверждённым исполнением (А9)."@ru ;
+    sh:property [ sh:datatype xsd:decimal ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:averageEntryPrice ],
+        [ sh:class ais:Instrument ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:positionForInstrument ],
+        [ sh:class ais:Execution ;
+            sh:minCount 1 ;
+            sh:path ais:positionChangedByExecution ],
+        [ sh:datatype xsd:decimal ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:positionQuantity ] ;
+    sh:targetClass ais:Position .
+
+<https://example.org/autonomous-investment/shapes#RiskCheckShape> a sh:NodeShape ;
+    rdfs:label "Форма проверки риска"@ru ;
+    sh:property [ sh:in ( "admitted"^^xsd:string "blocked"^^xsd:string "insufficientData"^^xsd:string ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:riskOutcome ],
+        [ sh:datatype xsd:decimal ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:minInclusive 0.0 ;
+            sh:path ais:dailyLossAtCheckPct ],
+        [ sh:class ais:MarketData ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:checkUsesMarketData ],
+        [ sh:class ais:Strategy ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:checkUsesStrategy ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:path ais:violatedLimit ],
+        [ sh:class ais:JournalEntry ;
+            sh:message "У каждого события должна быть запись журнала (А12)."@ru ;
+            sh:minCount 1 ;
+            sh:path ais:hasJournalEntry ],
+        [ sh:class ais:Decision ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:checkForDecision ],
+        [ sh:class ais:Portfolio ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:checkUsesPortfolio ],
+        [ sh:datatype xsd:integer ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:minInclusive 0.0 ;
+            sh:path ais:marketDataAgeSeconds ] ;
+    sh:targetClass ais:RiskCheck .
+
+<https://example.org/autonomous-investment/shapes#StrategyShape> a sh:NodeShape ;
+    rdfs:label "Форма стратегии"@ru ;
+    rdfs:comment "Числовые ограничения задаются владельцем; риск-параметры в этой компактной версии являются полями стратегии."@ru ;
+    sh:property [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:strategyName ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:strategyVersion ],
+        [ sh:datatype xsd:decimal ;
+            sh:maxCount 1 ;
+            sh:maxInclusive 100.0 ;
+            sh:minCount 1 ;
+            sh:minInclusive 0.0 ;
+            sh:path ais:positionLimitPct ],
+        [ sh:datatype xsd:integer ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:freshnessThresholdSeconds ],
+        [ sh:datatype xsd:decimal ;
+            sh:maxCount 1 ;
+            sh:maxInclusive 100.0 ;
+            sh:minCount 1 ;
+            sh:minInclusive 0.0 ;
+            sh:path ais:dailyLossLimitPct ],
+        [ sh:in ( "full"^^xsd:string "notify"^^xsd:string "ownerApproval"^^xsd:string "pause"^^xsd:string ) ;
+            sh:maxCount 1 ;
+            sh:path ais:autonomyLevel ] ;
+    sh:targetClass ais:Strategy .
+
+<https://example.org/autonomous-investment/shapes#TradeOperationShape> a sh:NodeShape ;
+    rdfs:label "Форма торговой операции"@ru ;
+    rdfs:comment "Статус «sent» не является доказательством исполнения."@ru ;
+    sh:property [ sh:class ais:Execution ;
+            sh:maxCount 1 ;
+            sh:path ais:operationHasExecution ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:operationCurrency ],
+        [ sh:class ais:Decision ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:operationCreatedFromDecision ],
+        [ sh:datatype xsd:decimal ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:minInclusive 0.0 ;
+            sh:path ais:operationAmount ],
+        [ sh:in ( "created"^^xsd:string "sent"^^xsd:string "executed"^^xsd:string "rejected"^^xsd:string ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:operationStatus ],
+        [ sh:class ais:BrokerAPI ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:operationSentViaAPI ],
+        [ sh:in ( "buy"^^xsd:string "sell"^^xsd:string ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ais:operationType ],
+        [ sh:class ais:JournalEntry ;
+            sh:message "У каждого события должна быть запись журнала (А12)."@ru ;
+            sh:minCount 1 ;
+            sh:path ais:hasJournalEntry ] ;
+    sh:targetClass ais:TradeOperation .
+
