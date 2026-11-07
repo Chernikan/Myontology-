@@ -1,0 +1,134 @@
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex: <https://example.org/autonomous-invest#> .
+
+# --- Решение: статусы и типы из перечислений задания ---
+ex:DecisionShape a sh:NodeShape ;
+  sh:targetClass ex:Decision ;
+  sh:property [
+    sh:path ex:decisionStatus ;
+    sh:minCount 1 ; sh:maxCount 1 ;
+    sh:in ("сформировано" "допущено" "заблокировано" "не допущено") ;
+    sh:message "Статус решения должен быть из перечисления задания" ;
+  ] ;
+  sh:property [
+    sh:path ex:decisionType ;
+    sh:minCount 1 ;
+    sh:in ("покупка" "продажа" "удержание") ;
+  ] ;
+  sh:property [
+    sh:path ex:decisionVolume ;
+    sh:minCount 1 ;
+    sh:datatype xsd:decimal ;
+    sh:minInclusive 0 ;
+  ] .
+
+# --- Аксиома A6: операция создаётся только из допущенного решения ---
+ex:OperationShape a sh:NodeShape ;
+  sh:targetClass ex:TradeOperation ;
+  sh:property [
+    sh:path ex:generatesOperation ;
+    sh:minCount 1 ; sh:maxCount 1 ;
+    sh:qualifiedValueShape [
+      a sh:NodeShape ;
+      sh:property [ sh:path ex:decisionStatus ; sh:hasValue "допущено" ] ;
+    ] ;
+    sh:qualifiedMinCount 1 ;
+    sh:message "Аксиома A6: операция возможна только из решения со статусом «допущено»" ;
+  ] ;
+  sh:property [
+    sh:path ex:opStatus ;
+    sh:minCount 1 ;
+    sh:in ("создана" "передана" "исполнена" "отклонена") ;
+  ] .
+
+# --- Аксиома A7: исполнение подтверждается только брокером ---
+ex:ExecutionShape a sh:NodeShape ;
+  sh:targetClass ex:Execution ;
+  sh:property [
+    sh:path ex:confirmedBy ;
+    sh:minCount 1 ;
+    sh:class ex:BrokerConfirmation ;
+    sh:message "Аксиома A7: исполнение без подтверждения брокера не считается исполнением" ;
+  ] .
+
+# --- Аксиома A12: события фиксируются минимум одной записью журнала ---
+ex:JournalizedShape a sh:NodeShape ;
+  sh:targetClass ex:Decision , ex:RiskCheck , ex:TradeOperation ,
+                 ex:Execution , ex:Notification ;
+  sh:property [
+    sh:path ex:recordedIn ;
+    sh:minCount 1 ;
+    sh:class ex:JournalRecord ;
+    sh:message "Аксиома A12: событие должно быть зафиксировано записью журнала" ;
+  ] .
+
+# --- Проверка риска: вывод из перечисления ---
+ex:RiskCheckShape a sh:NodeShape ;
+  sh:targetClass ex:RiskCheck ;
+  sh:property [
+    sh:path ex:riskVerdict ;
+    sh:minCount 1 ;
+    sh:in ("допущено" "заблокировано" "недостаточно данных") ;
+  ] ;
+  sh:property [
+    sh:path ex:riskCheckTime ;
+    sh:minCount 1 ;
+    sh:datatype xsd:dateTime ;
+  ] .
+
+# --- Аксиома A2: у допущенного решения есть проверка риска ---
+ex:AdmittedDecisionShape a sh:NodeShape ;
+  sh:targetClass ex:Decision ;
+  sh:filterShape [
+    a sh:NodeShape ;
+    sh:property [ sh:path ex:decisionStatus ; sh:hasValue "допущено" ] ;
+  ] ;
+  sh:property [
+    sh:path ex:checkedBy ;
+    sh:minCount 1 ;
+    sh:qualifiedValueShape [
+      a sh:NodeShape ;
+      sh:property [ sh:path ex:riskVerdict ; sh:hasValue "допущено" ] ;
+    ] ;
+    sh:qualifiedMinCount 1 ;
+    sh:message "Аксиома A2: допущенное решение требует проверки риска с выводом «допущено»" ;
+  ] .
+
+# --- Испытание требования (аналог формы «Проверка» руководства) ---
+ex:CheckShape a sh:NodeShape ;
+  sh:targetClass ex:Check ;
+  sh:property [
+    sh:path ex:checkResult ;
+    sh:minCount 1 ; sh:maxCount 1 ;
+    sh:in ("Пройдена" "Не пройдена") ;
+    sh:message "Результат испытания: «Пройдена» или «Не пройдена»" ;
+  ] ;
+  sh:property [ sh:path ex:checksDecision ;    sh:minCount 1 ; sh:class ex:Decision ] ;
+  sh:property [ sh:path ex:checksRequirement ; sh:minCount 1 ; sh:class ex:Requirement ] .
+
+# --- Стратегия: минимум один риск-параметр и одно требование ---
+ex:StrategyShape a sh:NodeShape ;
+  sh:targetClass ex:Strategy ;
+  sh:property [ sh:path ex:includesParam ;   sh:minCount 1 ; sh:class ex:RiskParameter ] ;
+  sh:property [ sh:path ex:hasRequirement ; sh:minCount 1 ; sh:class ex:Requirement ] .
+
+# --- Рыночные данные: обязательное время получения (правило R2) ---
+ex:MarketDataShape a sh:NodeShape ;
+  sh:targetClass ex:MarketData ;
+  sh:property [
+    sh:path ex:receivedAt ;
+    sh:minCount 1 ;
+    sh:datatype xsd:dateTime ;
+    sh:message "Правило R2: без времени получения свежесть данных не проверить" ;
+  ] .
+
+# --- Брокерский API: статус из перечисления (аксиома A8) ---
+ex:BrokerAPIShape a sh:NodeShape ;
+  sh:targetClass ex:BrokerAPI ;
+  sh:property [
+    sh:path ex:apiAccessStatus ;
+    sh:minCount 1 ;
+    sh:in ("доступен" "недоступен" "неизвестно") ;
+    sh:message "Аксиома A8: операция не передаётся при статусе «недоступен» или «неизвестно»" ;
+  ] .
